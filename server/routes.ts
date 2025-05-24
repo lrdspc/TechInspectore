@@ -8,6 +8,7 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import MemoryStore from "memorystore";
+import { generateInspectionReport } from "./docx-generator";
 
 // Função para verificar a integridade dos dados
 async function verificarIntegridadeDados() {
@@ -659,12 +660,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Relatório só pode ser gerado para inspeções concluídas" });
       }
       
-      // Simular geração do documento de relatório
+      // Verificar se os dados necessários estão disponíveis
+      if (!inspection.clientId || !inspection.projectId) {
+        return res.status(400).json({ 
+          message: "Dados de inspeção incompletos para geração do relatório" 
+        });
+      }
+      
       const reportData = {
         id: `REP-${Date.now()}`,
         inspectionId: inspection.id,
         generatedAt: new Date().toISOString(),
-        downloadUrl: `/api/reports/${inspection.id}/download`,
+        downloadUrl: `/api/reports/${inspection.id}/download-docx`,
         status: 'generated'
       };
       
@@ -674,6 +681,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para download do relatório em .docx
+  app.get("/api/reports/:id/download-docx", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const inspection = await storage.getInspection(id);
+      
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspeção não encontrada" });
+      }
+      
+      // Verificar se os dados necessários existem
+      if (!inspection.clientId || !inspection.projectId) {
+        return res.status(400).json({ 
+          message: "Dados de inspeção incompletos para geração do documento" 
+        });
+      }
+      
+      // Verificar se a inspeção está concluída
+      if (inspection.status !== 'completed') {
+        return res.status(400).json({ 
+          message: "Documento só pode ser gerado para inspeções concluídas" 
+        });
+      }
+      
+      // Buscar dados relacionados
+      const client = await storage.getClient(inspection.clientId);
+      const project = await storage.getProject(inspection.projectId);
+      const evidences = await storage.getEvidencesByInspectionId(inspection.id);
+      
+      if (!client || !project) {
+        return res.status(400).json({ 
+          message: "Dados de cliente ou projeto não encontrados" 
+        });
+      }
+      
+      // Gerar o documento .docx
+      const docxBuffer = await generateInspectionReport({
+        inspection,
+        client,
+        project,
+        evidences
+      });
+      
+      // Configurar headers para download do arquivo
+      res.setHeader('Content-Disposition', `attachment; filename="relatorio-${inspection.protocolNumber}.docx"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Length', docxBuffer.length);
+      
+      // Enviar o arquivo
+      res.end(docxBuffer);
+      
+    } catch (error) {
+      console.error("Erro ao gerar documento DOCX:", error);
+      next(error);
+    }
+  });
+
   // Rota para download do relatório em PDF
   app.get("/api/reports/:id/download", isAuthenticated, async (req, res, next) => {
     try {
