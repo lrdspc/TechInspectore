@@ -202,9 +202,9 @@ export function generateRandomInspectionData() {
     roofModel: roofModels[Math.floor(Math.random() * roofModels.length)],
     quantity: Math.floor(Math.random() * 500) + 50,
     area: Math.floor(Math.random() * 1000) + 100,
-    installationDate: installationDate.toISOString().split('T')[0],
+    installationDate: installationDate,
     installationType: installationTypes[Math.floor(Math.random() * installationTypes.length)],
-    scheduledDate: scheduledDate.toISOString().split('T')[0],
+    scheduledDate: scheduledDate,
     generalCondition: conditions[Math.floor(Math.random() * conditions.length)],
     identifiedProblems: [
       problems[Math.floor(Math.random() * problems.length)],
@@ -244,7 +244,15 @@ export function generateCompleteFormData() {
   const project = generateRandomProject();
   const inspection = generateRandomInspectionData();
 
+  // Use existing client and project IDs from the system
+  const clientId = Math.floor(Math.random() * 3) + 1; // IDs 1, 2, or 3
+  const projectId = Math.floor(Math.random() * 3) + 1; // IDs 1, 2, or 3
+
   return {
+    // Required IDs for validation
+    clientId: clientId,
+    projectId: projectId,
+
     // Client data
     clientName: client.name,
     clientType: client.type,
