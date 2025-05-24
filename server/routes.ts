@@ -435,7 +435,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/inspections", isAuthenticated, async (req, res, next) => {
     try {
-      const inspectionData = insertInspectionSchema.parse(req.body);
+      // Convert date strings to Date objects before validation
+      const bodyWithDates = {
+        ...req.body,
+        scheduledDate: req.body.scheduledDate ? new Date(req.body.scheduledDate) : null,
+        installationDate: req.body.installationDate ? new Date(req.body.installationDate) : null,
+      };
+      
+      const inspectionData = insertInspectionSchema.parse(bodyWithDates);
       const inspection = await storage.createInspection(inspectionData);
       res.status(201).json(inspection);
     } catch (error) {
@@ -449,7 +456,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/inspections/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const inspectionData = insertInspectionSchema.partial().parse(req.body);
+      
+      // Convert date strings to Date objects before validation
+      const bodyWithDates = {
+        ...req.body,
+        scheduledDate: req.body.scheduledDate ? new Date(req.body.scheduledDate) : undefined,
+        installationDate: req.body.installationDate ? new Date(req.body.installationDate) : undefined,
+      };
+      
+      const inspectionData = insertInspectionSchema.partial().parse(bodyWithDates);
       const inspection = await storage.updateInspection(id, inspectionData);
       
       if (!inspection) {
