@@ -78,9 +78,9 @@ const ReportsPage: React.FC = () => {
 
   const handleDownloadReport = async (report: any) => {
     try {
-      // Solicitar a geração do relatório
-      const response = await fetch(`/api/inspections/${report.id}/generate-report`, {
-        method: 'POST',
+      // Fazer download direto do arquivo .docx
+      const response = await fetch(`/api/reports/${report.id}/download-docx`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -91,18 +91,21 @@ const ReportsPage: React.FC = () => {
         throw new Error(errorData.message || 'Erro ao gerar relatório');
       }
       
-      const data = await response.json();
-      console.log('Relatório gerado:', data);
+      // Criar blob e fazer download do arquivo
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio-${report.protocolNumber}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      // Normalmente aqui faria o download do arquivo
-      // Em um app real, usaríamos algo como:
-      // window.open(data.downloadUrl, '_blank');
-      
-      // Por enquanto, apenas mostramos um alerta
-      alert(`Relatório ${report.protocolNumber} gerado com sucesso!`);
+      alert(`Relatório ${report.protocolNumber} baixado com sucesso!`);
     } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      alert(`Erro ao gerar relatório: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error('Erro ao baixar relatório:', error);
+      alert(`Erro ao baixar relatório: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
