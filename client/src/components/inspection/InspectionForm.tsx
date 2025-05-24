@@ -20,7 +20,8 @@ import {
   User,
   Building,
   Box,
-  AlertTriangle
+  AlertTriangle,
+  Shuffle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateCompleteFormData } from '@/lib/mock-data';
 
 interface InspectionFormProps {
   inspectionId?: string;
@@ -60,7 +62,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ inspectionId, initialDa
   // Set form data from API response
   useEffect(() => {
     if (inspectionData) {
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         ...inspectionData
       }));
@@ -137,10 +139,23 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ inspectionId, initialDa
   };
   
   const updateFormData = (stepData: any) => {
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       ...stepData
     }));
+  };
+
+  const handleFillRandomData = () => {
+    const randomData = generateCompleteFormData();
+    setFormData((prev: any) => ({
+      ...prev,
+      ...randomData
+    }));
+    
+    toast({
+      title: 'Dados aleatórios preenchidos!',
+      description: 'Formulário preenchido com dados de teste para facilitar o desenvolvimento.',
+    });
   };
   
   // If loading existing inspection data
@@ -226,6 +241,20 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ inspectionId, initialDa
         </div>
         
         <div className="flex items-center gap-3 ml-auto">
+          {/* Botão para preencher dados aleatórios - apenas em desenvolvimento */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              onClick={handleFillRandomData}
+              title="Preencher com dados aleatórios para teste"
+            >
+              <Shuffle className="h-3 w-3 mr-1" />
+              Dados Teste
+            </Button>
+          )}
+          
           {formData?.scheduledDate && (
             <div className="hidden md:flex items-center text-xs text-muted-foreground">
               <Calendar className="h-3 w-3 mr-1" />
