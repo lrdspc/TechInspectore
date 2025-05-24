@@ -20,13 +20,15 @@ const DashboardPage: React.FC = () => {
         const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
         
         const inspectionsThisMonth = inspections.filter((i: any) => {
+          if (!i.createdAt) return false;
           const date = new Date(i.createdAt);
-          return date.getMonth() === thisMonth;
+          return !isNaN(date.getTime()) && date.getMonth() === thisMonth;
         });
         
         const inspectionsLastMonth = inspections.filter((i: any) => {
+          if (!i.createdAt) return false;
           const date = new Date(i.createdAt);
-          return date.getMonth() === lastMonth;
+          return !isNaN(date.getTime()) && date.getMonth() === lastMonth;
         });
         
         const pendingInspections = inspections.filter((i: any) => 
@@ -43,9 +45,16 @@ const DashboardPage: React.FC = () => {
         
         if (inspectionsWithTime.length > 0) {
           const totalTimeMs = inspectionsWithTime.reduce((sum: number, i: any) => {
-            const endTime = new Date(i.endTime).getTime();
-            const startTime = new Date(i.startTime).getTime();
-            return sum + (endTime - startTime);
+            const endTime = new Date(i.endTime);
+            const startTime = new Date(i.startTime);
+            
+            // Validate dates before calculation
+            if (isNaN(endTime.getTime()) || isNaN(startTime.getTime())) {
+              return sum;
+            }
+            
+            const timeDiff = endTime.getTime() - startTime.getTime();
+            return sum + (timeDiff > 0 ? timeDiff : 0);
           }, 0);
           
           avgTimeInHours = (totalTimeMs / inspectionsWithTime.length) / (1000 * 60 * 60);

@@ -38,17 +38,23 @@ const CalendarPage: React.FC = () => {
 
   // Filter inspections for the selected day
   const getInspectionsForDate = (date: Date) => {
-    if (!inspections) return [];
+    if (!inspections || !Array.isArray(inspections)) return [];
     
     return inspections.filter((inspection: any) => {
       if (!inspection.scheduledDate) return false;
-      return isSameDay(parseISO(inspection.scheduledDate), date);
+      try {
+        const inspectionDate = parseISO(inspection.scheduledDate);
+        return !isNaN(inspectionDate.getTime()) && isSameDay(inspectionDate, date);
+      } catch (error) {
+        console.warn('Invalid date format for inspection:', inspection.scheduledDate);
+        return false;
+      }
     });
   };
 
   // Get inspections for current month to highlight dates with inspections
   const daysWithInspections = React.useMemo(() => {
-    if (!inspections) return [];
+    if (!inspections || !Array.isArray(inspections)) return [];
     
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -57,7 +63,12 @@ const CalendarPage: React.FC = () => {
     return daysInMonth.map(day => {
       const hasInspections = inspections.some((inspection: any) => {
         if (!inspection.scheduledDate) return false;
-        return isSameDay(parseISO(inspection.scheduledDate), day);
+        try {
+          const inspectionDate = parseISO(inspection.scheduledDate);
+          return !isNaN(inspectionDate.getTime()) && isSameDay(inspectionDate, day);
+        } catch (error) {
+          return false;
+        }
       });
       
       return { date: day, hasInspections };
