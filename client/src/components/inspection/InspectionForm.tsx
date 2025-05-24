@@ -131,7 +131,10 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ inspectionId, initialDa
     const dataToSave = {
       ...formData,
       status,
-      userId: user?.id
+      userId: user?.id,
+      // Convert date strings to Date objects if needed
+      scheduledDate: formData.scheduledDate ? new Date(formData.scheduledDate) : null,
+      installationDate: formData.installationDate ? new Date(formData.installationDate) : null,
     };
     
     // Execute mutation
