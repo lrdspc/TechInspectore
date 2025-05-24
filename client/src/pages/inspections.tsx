@@ -34,7 +34,7 @@ const InspectionsPage: React.FC = () => {
   });
 
   // Filter inspections based on search term and active tab
-  const filteredInspections = inspections ? inspections.filter((inspection: any) => {
+  const filteredInspections = Array.isArray(inspections) ? inspections.filter((inspection: any) => {
     const matchesSearch = 
       (inspection.projectName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (inspection.clientName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
