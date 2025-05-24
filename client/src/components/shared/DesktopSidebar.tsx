@@ -75,20 +75,17 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ user }) => {
                 <Link 
                   key={item.href} 
                   href={item.href}
+                  className={cn(
+                    "flex items-center px-2 py-2 mb-1 rounded-md", 
+                    isActive 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:bg-accent"
+                  )}
                 >
-                  <a 
-                    className={cn(
-                      "flex items-center px-2 py-2 mb-1 rounded-md", 
-                      isActive 
-                        ? "bg-primary/10 text-primary" 
-                        : "text-muted-foreground hover:bg-accent"
-                    )}
-                  >
-                    <span className="mr-3">{item.icon}</span>
-                    <span className={isActive ? "font-medium" : ""}>
-                      {item.label}
-                    </span>
-                  </a>
+                  <span className="mr-3">{item.icon}</span>
+                  <span className={isActive ? "font-medium" : ""}>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
