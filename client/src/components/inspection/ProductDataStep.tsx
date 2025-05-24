@@ -29,7 +29,7 @@ const ProductDataStep: React.FC<ProductDataStepProps> = ({
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormData({ installationDate: e.target.value });
+    updateFormData({ installationDate: new Date(e.target.value) });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
