@@ -127,14 +127,16 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ inspectionId, initialDa
   };
   
   const handleSave = (status: string = 'draft') => {
-    // Prepare data for saving
+    // Prepare data for saving and ensure dates are properly formatted
     const dataToSave = {
       ...formData,
       status,
       userId: user?.id,
-      // Convert date strings to Date objects if needed
-      scheduledDate: formData.scheduledDate ? new Date(formData.scheduledDate) : null,
-      installationDate: formData.installationDate ? new Date(formData.installationDate) : null,
+      // Ensure dates are Date objects, handling both strings and existing Date objects
+      scheduledDate: formData.scheduledDate ? 
+        (formData.scheduledDate instanceof Date ? formData.scheduledDate : new Date(formData.scheduledDate)) : null,
+      installationDate: formData.installationDate ? 
+        (formData.installationDate instanceof Date ? formData.installationDate : new Date(formData.installationDate)) : null,
     };
     
     // Execute mutation
