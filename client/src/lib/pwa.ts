@@ -1,5 +1,10 @@
 import { addToSyncQueue, getSyncQueue, removeFromSyncQueue, updateSyncQueueItem, clearAllData } from './db';
 
+type ServiceWorkerMessage = {
+  type: string;
+  payload?: any;
+};
+
 // Re-export isOnline to avoid import errors
 export function isOnline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine === true;
@@ -13,21 +18,83 @@ export async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
+        type: 'module',
+        scope: '/',
+        updateViaCache: 'none',
       });
       
       console.log('ServiceWorker registered with scope:', registration.scope);
       
-      // Set up periodic sync if browser supports it
+      // Configura os listeners de mensagens do service worker
+      setupServiceWorkerListeners(registration);
+      
+      // Verifica atualizações periodicamente
+      checkForServiceWorkerUpdates();
+      
+      // Configura sincronização periódica se suportado
       setupPeriodicSync();
       
-      // Process sync queue when online
+      // Processa a fila de sincronização quando estiver online
       window.addEventListener('online', processSyncQueue);
       
       return registration;
     } catch (error) {
       console.error('ServiceWorker registration failed:', error);
+      throw error; // Propaga o erro para que o chamador saiba que falhou
     }
+  }
+  
+  return null;
+}
+
+// Configura os listeners de mensagens do service worker
+function setupServiceWorkerListeners(registration: ServiceWorkerRegistration) {
+  // Listener para mensagens do service worker
+  navigator.serviceWorker.addEventListener('message', (event: MessageEvent<ServiceWorkerMessage>) => {
+    const { type, payload } = event.data;
+    
+    switch (type) {
+      case 'OFFLINE_READY':
+        console.log('O aplicativo está pronto para uso offline');
+        // Dispara um evento personalizado para notificar outros componentes
+        window.dispatchEvent(new CustomEvent('offlineReady'));
+        break;
+        
+      case 'UPDATE_AVAILABLE':
+        console.log('Nova atualização disponível');
+        // Dispara um evento personalizado para notificar sobre a atualização
+        window.dispatchEvent(new CustomEvent('updateAvailable', { detail: payload }));
+        break;
+        
+      case 'SYNC_STATUS':
+        console.log('Status da sincronização:', payload);
+        // Dispara um evento personalizado com o status da sincronização
+        window.dispatchEvent(new CustomEvent('syncStatus', { detail: payload }));
+        break;
+        
+      default:
+        console.log('Mensagem do service worker não tratada:', type, payload);
+    }
+  });
+  
+  // Listener para atualizações do service worker
+  registration.addEventListener('updatefound', () => {
+    const newWorker = registration.installing;
+    if (!newWorker) return;
+    
+    newWorker.addEventListener('statechange', () => {
+      console.log('Estado do novo service worker:', newWorker.state);
+      
+      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+        // Novo service worker instalado, mas ainda não ativado
+        window.dispatchEvent(new CustomEvent('updateReady'));
+      }
+    });
+  });
+  
+  // Verifica se há um service worker esperando para ativar
+  if (registration.waiting) {
+    window.dispatchEvent(new CustomEvent('updateReady'));
   }
 }
 

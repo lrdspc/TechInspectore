@@ -7,7 +7,7 @@
     "noEmit": true,
     "module": "ESNext",
     "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable", "webworker"],
     "jsx": "preserve",
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -15,6 +15,10 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "types": ["node", "vite/client"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./client/src/types"
+    ],
     "paths": {
       "@/*": ["./client/src/*"],
       "@shared/*": ["./shared/*"]

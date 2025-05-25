@@ -5,6 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import { useEffect } from "react";
 
+// PWA Components
+import { PWAUpdater } from "@/components/pwa/PWAUpdater";
+import { PWAStatus } from "@/components/pwa/PWAStatus";
+import { ConnectionStatus } from "@/components/pwa/ConnectionStatus";
+
 // Layouts
 import AuthLayout from "./components/layouts/AuthLayout";
 import AppLayout from "./components/layouts/AppLayout";
@@ -24,7 +29,7 @@ import InspectionDetailPage from "./pages/inspection/[id]";
 import NotFound from "./pages/not-found";
 
 // PWA initialization
-import { registerServiceWorker } from "./lib/pwa";
+import { registerServiceWorker } from "@/lib/pwa";
 
 function Router() {
   const [location] = useLocation();
@@ -120,6 +125,10 @@ function App() {
       <AuthProvider>
         <Router />
         <Toaster />
+        {/* PWA Components */}
+        <PWAUpdater />
+        <PWAStatus />
+        <ConnectionStatus />
       </AuthProvider>
     </QueryClientProvider>
   );

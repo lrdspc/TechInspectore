@@ -2,7 +2,98 @@
 const APP_VERSION = '1.0.0';
 const CACHE_NAME = 'brasilit-vistoria-v1-' + APP_VERSION;
 const OFFLINE_URL = '/offline.html';
-const DEBUG = false; // Definir como true para logs detalhados
+const DEBUG = process.env.NODE_ENV === 'development'; // Logs apenas em desenvolvimento
+
+// Importa o workbox do Vite
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
+
+// Configura o workbox
+if (workbox) {
+  workbox.setConfig({ debug: DEBUG });
+  
+  // Configuração de rotas
+  workbox.routing.registerRoute(
+    ({request}) => request.destination === 'document',
+    new workbox.strategies.NetworkFirst({
+      cacheName: CACHES.pages,
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 20,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 dias
+        }),
+      ],
+    })
+  );
+  
+  // Cache para assets estáticos
+  workbox.routing.registerRoute(
+    ({request}) => ['style', 'script', 'worker'].includes(request.destination),
+    new workbox.strategies.StaleWhileRevalidate({
+      cacheName: CACHES.static,
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
+        }),
+      ],
+    })
+  );
+  
+  // Cache para imagens
+  workbox.routing.registerRoute(
+    ({request}) => request.destination === 'image',
+    new workbox.strategies.CacheFirst({
+      cacheName: CACHES.images,
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 100,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
+        }),
+      ],
+    })
+  );
+  
+  // Cache para fontes
+  workbox.routing.registerRoute(
+    ({request}) => request.destination === 'font',
+    new workbox.strategies.CacheFirst({
+      cacheName: CACHES.fonts,
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 20,
+          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 ano
+        }),
+      ],
+    })
+  );
+  
+  // Habilita navegação offline
+  workbox.routing.setCatchHandler(({event}) => {
+    if (event.request.destination === 'document') {
+      return caches.match(OFFLINE_URL);
+    }
+    return Response.error();
+  });
+  
+  // Habilita atualização automática quando nova versão estiver disponível
+  workbox.core.skipWaiting();
+  workbox.core.clientsClaim();
+  
+  if (DEBUG) {
+    console.log('Workbox carregado com sucesso');
+  }
+}
+
+// Configura o self como escopo global
+self.__WB_DISABLE_DEV_LOGS = !DEBUG;
+
+// Configura o cliente para notificar quando estiver pronto
+const notifyClient = async (message) => {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => {
+    client.postMessage(message);
+  });
+};
 
 // Caches diferentes para diferentes tipos de conteúdo
 const CACHES = {
@@ -176,6 +267,11 @@ async function notifyAppUpdate() {
 
 // Evento de instalação - pré-cachear ativos estáticos
 self.addEventListener('install', (event) => {
+  // Pula a fase de espera para ativar imediatamente a nova versão
+  self.skipWaiting();
+  
+  // Notifica o cliente sobre a instalação
+  notifyClient({ type: 'SW_INSTALLED' });
   log('Instalando Service Worker versão:', APP_VERSION);
   
   event.waitUntil((async () => {
@@ -192,6 +288,17 @@ self.addEventListener('install', (event) => {
 
 // Evento de ativação - limpar caches antigos
 self.addEventListener('activate', (event) => {
+  // Toma o controle imediatamente
+  event.waitUntil(
+    (async () => {
+      if (self.registration.navigationPreload) {
+        // Habilita o navigation preload
+        await self.registration.navigationPreload.enable();
+      }
+      // Notifica o cliente sobre a ativação
+      notifyClient({ type: 'SW_ACTIVATED' });
+    })()
+  );
   log('Ativando Service Worker versão:', APP_VERSION);
   
   event.waitUntil((async () => {
@@ -434,6 +541,37 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
 
 // Evento de background sync para sincronizar dados offline
 self.addEventListener('sync', (event) => {
+  // Notifica o cliente sobre o início da sincronização
+  notifyClient({ 
+    type: 'SYNC_STARTED',
+    tag: event.tag 
+  });
+  
+  // Adiciona lógica de sincronização personalizada aqui
+  if (event.tag === 'sync-queue') {
+    event.waitUntil(
+      syncData()
+        .then(() => {
+          notifyClient({ 
+            type: 'SYNC_COMPLETED',
+            tag: event.tag,
+            success: true
+          });
+        })
+        .catch(error => {
+          console.error('Erro na sincronização:', error);
+          notifyClient({ 
+            type: 'SYNC_ERROR',
+            tag: event.tag,
+            error: error.message
+          });
+          // Agenda uma nova tentativa
+          return new Promise((_, reject) => {
+            setTimeout(() => reject(error), 5 * 60 * 1000); // Tenta novamente em 5 minutos
+          });
+        })
+    );
+  }
   log('Background sync event:', event.tag);
   
   if (event.tag === 'sync-data') {
