@@ -10,6 +10,7 @@ import {
   ClipboardList, 
   History, 
   FileText, 
+  FileEdit,
   Settings, 
   HelpCircle,
   LogOut
@@ -34,6 +35,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ user }) => {
     { label: 'Em andamento', icon: <ClipboardList size={20} />, href: '/inspections?status=in_progress', category: 'Vistorias' },
     { label: 'Histórico', icon: <History size={20} />, href: '/inspections', category: 'Vistorias' },
     { label: 'Relatórios', icon: <FileText size={20} />, href: '/reports', category: 'Vistorias' },
+    { label: 'Modelos', icon: <FileEdit size={20} />, href: '/templates', category: 'Vistorias' },
     { label: 'Configurações', icon: <Settings size={20} />, href: '/settings', category: 'Sistema' },
     { label: 'Ajuda', icon: <HelpCircle size={20} />, href: '/help', category: 'Sistema' },
   ];

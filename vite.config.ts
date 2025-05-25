@@ -17,6 +17,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      // Configure PWA behavior based on environment
+      strategies: process.env.NODE_ENV === 'development' ? undefined : 'injectManifest',
+      devOptions: {
+        enabled: process.env.NODE_ENV !== 'development', // Disable in development
+        type: 'module',
+        navigateFallback: 'index.html',
+      },
       manifest: {
         name: 'Brasilit Vistorias Técnicas',
         short_name: 'Brasilit',
@@ -175,11 +182,7 @@ export default defineConfig({
           }
         ]
       },
-      devOptions: {
-        enabled: process.env.NODE_ENV === 'development',
-        type: 'module',
-        navigateFallback: 'index.html',
-      }
+
     }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined

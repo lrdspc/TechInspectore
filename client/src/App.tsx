@@ -22,6 +22,7 @@ import ProjectsPage from "./pages/projects";
 import InspectionsPage from "./pages/inspections";
 import CalendarPage from "./pages/calendar";
 import ReportsPage from "./pages/reports";
+import TemplatesPage from "./pages/templates";
 import SettingsPage from "./pages/settings";
 import ProfilePage from "./pages/profile";
 import NewInspectionPage from "./pages/inspection/new";
@@ -82,6 +83,12 @@ function Router() {
       <Route path="/reports">
         <AppLayout>
           <ReportsPage />
+        </AppLayout>
+      </Route>
+      
+      <Route path="/templates">
+        <AppLayout>
+          <TemplatesPage />
         </AppLayout>
       </Route>
       
